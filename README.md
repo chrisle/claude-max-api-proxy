@@ -60,8 +60,8 @@ Your App (Clawdbot, etc.)
 
 ```bash
 # Clone the repository
-git clone https://github.com/anthropics/claude-code-cli-provider.git
-cd claude-code-cli-provider
+git clone https://github.com/chrisle/claude-max-api-proxy.git
+cd claude-max-api-proxy
 
 # Install dependencies
 npm install
@@ -70,9 +70,39 @@ npm install
 npm run build
 ```
 
+## Service Installation (Auto-Start on Boot)
+
+Use the automated installation script to set up the service:
+
+```bash
+# For macOS (creates LaunchAgent)
+./install-service.sh
+
+# For Linux (creates systemd service - requires sudo)
+sudo ./install-service.sh
+```
+
+The script will:
+- ✓ Check prerequisites (Node.js, Claude CLI)
+- ✓ Build the project
+- ✓ Auto-detect paths and configuration
+- ✓ Create and start the service
+- ✓ Configure auto-start on boot
+
+**Uninstall the service:**
+```bash
+# macOS
+./uninstall-service.sh
+
+# Linux
+sudo ./uninstall-service.sh
+```
+
+See [`docs/macos-setup.md`](docs/macos-setup.md) for manual LaunchAgent setup details.
+
 ## Usage
 
-### Start the server
+### Start the server manually
 
 ```bash
 node dist/server/standalone.js
@@ -224,9 +254,11 @@ response = client.chat.completions.create(
 )
 ```
 
-## Auto-Start on macOS
+## Auto-Start on macOS / Linux
 
-Create a LaunchAgent to start the provider automatically on login. See `docs/macos-setup.md` for detailed instructions.
+Use the automated installation script: `./install-service.sh` (see [Service Installation](#service-installation-auto-start-on-boot) above)
+
+For manual LaunchAgent setup, see [`docs/macos-setup.md`](docs/macos-setup.md).
 
 ## Architecture
 

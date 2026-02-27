@@ -5,6 +5,8 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- **Automated service installation** - `install-service.sh` script for one-command setup on macOS and Linux
+- **Service uninstaller** - `uninstall-service.sh` for clean removal
 - **Array content format support** - Handles both string and array-based message content, fixing `[object Object]` serialization issues (from PR #27)
 - **System prompt support** - Proper handling via `--append-system-prompt` CLI flag instead of embedding in prompts (from PR #16)
 - **Streaming usage data** - Token usage information now included in final streaming chunks (from PR #16)
