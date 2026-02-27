@@ -35,12 +35,17 @@ Your App (Clawdbot, etc.)
 ## Features
 
 - **OpenAI-compatible API** — Works with any client that supports OpenAI's API format
-- **Streaming support** — Real-time token streaming via Server-Sent Events
-- **Multiple models** — Claude Opus, Sonnet, and Haiku
+- **Streaming support** — Real-time token streaming via Server-Sent Events with usage data
+- **Multiple models** — Claude Opus 4.6, Sonnet 4.5, and Haiku 4.5
+- **System prompt support** — Proper handling via `--append-system-prompt` flag
+- **Array content format** — Supports both string and array-based content (multimodal-ready)
+- **Large prompt handling** — stdin-based delivery prevents E2BIG errors
+- **Flexible model naming** — Supports any provider prefix (claude-max/, claude-code-cli/, etc.)
 - **Session management** — Maintains conversation context
 - **Auto-start service** — Optional LaunchAgent for macOS
 - **Zero configuration** — Uses existing Claude CLI authentication
 - **Secure by design** — Uses spawn() to prevent shell injection
+- **Service mode** — Optional `CLAUDE_DANGEROUSLY_SKIP_PERMISSIONS` env var
 
 ## Prerequisites
 
@@ -114,9 +119,66 @@ curl -N -X POST http://localhost:3456/v1/chat/completions \
 
 | Model ID | Maps To |
 |----------|---------|
-| `claude-opus-4` | Claude Opus 4.5 |
-| `claude-sonnet-4` | Claude Sonnet 4 |
-| `claude-haiku-4` | Claude Haiku 4 |
+| `claude-opus-4` | Claude Opus 4.6 |
+| `claude-opus-4-6` | Claude Opus 4.6 |
+| `claude-sonnet-4` | Claude Sonnet 4.5 |
+| `claude-sonnet-4-5` | Claude Sonnet 4.5 |
+| `claude-haiku-4` | Claude Haiku 4.5 |
+| `claude-haiku-4-5` | Claude Haiku 4.5 |
+
+**Note:** Model names with provider prefixes are automatically normalized:
+- `claude-max/claude-opus-4` → `opus`
+- `claude-code-cli/claude-sonnet-4` → `sonnet`
+- Any prefix pattern is supported
+
+## Configuration
+
+### Environment Variables
+
+- **`CLAUDE_DANGEROUSLY_SKIP_PERMISSIONS`** — Set to `true` to skip permission prompts (useful for automated/service environments)
+  ```bash
+  CLAUDE_DANGEROUSLY_SKIP_PERMISSIONS=true node dist/server/standalone.js
+  ```
+
+### Message Format Support
+
+The API supports both string and array-based content formats:
+
+**String format:**
+```json
+{
+  "messages": [
+    {"role": "user", "content": "Hello!"}
+  ]
+}
+```
+
+**Array format (multimodal-ready):**
+```json
+{
+  "messages": [
+    {
+      "role": "user",
+      "content": [
+        {"type": "text", "text": "Hello!"}
+      ]
+    }
+  ]
+}
+```
+
+### System Prompts
+
+System messages are properly handled via Claude CLI's `--append-system-prompt` flag:
+
+```json
+{
+  "messages": [
+    {"role": "system", "content": "You are a helpful assistant."},
+    {"role": "user", "content": "Hello!"}
+  ]
+}
+```
 
 ## Configuration with Popular Tools
 

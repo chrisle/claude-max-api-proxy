@@ -46,8 +46,12 @@ export function cliToOpenaiChunk(
 /**
  * Create a final "done" chunk for streaming
  */
-export function createDoneChunk(requestId: string, model: string): OpenAIChatChunk {
-  return {
+export function createDoneChunk(
+  requestId: string,
+  model: string,
+  usage?: { input_tokens: number; output_tokens: number }
+): OpenAIChatChunk {
+  const chunk: OpenAIChatChunk = {
     id: `chatcmpl-${requestId}`,
     object: "chat.completion.chunk",
     created: Math.floor(Date.now() / 1000),
@@ -60,6 +64,17 @@ export function createDoneChunk(requestId: string, model: string): OpenAIChatChu
       },
     ],
   };
+
+  // Include usage data if available
+  if (usage) {
+    chunk.usage = {
+      prompt_tokens: usage.input_tokens,
+      completion_tokens: usage.output_tokens,
+      total_tokens: usage.input_tokens + usage.output_tokens,
+    };
+  }
+
+  return chunk;
 }
 
 /**

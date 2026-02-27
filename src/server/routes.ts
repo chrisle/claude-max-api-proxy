@@ -97,6 +97,7 @@ async function handleStreamingResponse(
     let isFirst = true;
     let lastModel = "claude-sonnet-4";
     let isComplete = false;
+    let usage: { input_tokens: number; output_tokens: number } | undefined;
 
     // Handle actual client disconnect (response stream closed)
     res.on("close", () => {
@@ -135,11 +136,15 @@ async function handleStreamingResponse(
       lastModel = message.message.model;
     });
 
-    subprocess.on("result", (_result: ClaudeCliResult) => {
+    subprocess.on("result", (result: ClaudeCliResult) => {
       isComplete = true;
+      // Capture usage data from result
+      if (result.usage) {
+        usage = result.usage;
+      }
       if (!res.writableEnded) {
-        // Send final done chunk with finish_reason
-        const doneChunk = createDoneChunk(requestId, lastModel);
+        // Send final done chunk with finish_reason and usage
+        const doneChunk = createDoneChunk(requestId, lastModel, usage);
         res.write(`data: ${JSON.stringify(doneChunk)}\n\n`);
         res.write("data: [DONE]\n\n");
         res.end();
@@ -179,6 +184,7 @@ async function handleStreamingResponse(
     subprocess.start(cliInput.prompt, {
       model: cliInput.model,
       sessionId: cliInput.sessionId,
+      systemPrompt: cliInput.systemPrompt,
     }).catch((err) => {
       console.error("[Streaming] Subprocess start error:", err);
       reject(err);
@@ -234,6 +240,7 @@ async function handleNonStreamingResponse(
       .start(cliInput.prompt, {
         model: cliInput.model,
         sessionId: cliInput.sessionId,
+        systemPrompt: cliInput.systemPrompt,
       })
       .catch((error) => {
         res.status(500).json({

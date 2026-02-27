@@ -21,6 +21,7 @@ import type { ClaudeModel } from "../adapter/openai-to-cli.js";
 export interface SubprocessOptions {
   model: ClaudeModel;
   sessionId?: string;
+  systemPrompt?: string;
   cwd?: string;
   timeout?: number;
 }
@@ -46,7 +47,7 @@ export class ClaudeSubprocess extends EventEmitter {
    * Start the Claude CLI subprocess with the given prompt
    */
   async start(prompt: string, options: SubprocessOptions): Promise<void> {
-    const args = this.buildArgs(prompt, options);
+    const args = this.buildArgs(options);
     const timeout = options.timeout || DEFAULT_TIMEOUT;
 
     return new Promise((resolve, reject) => {
@@ -81,8 +82,11 @@ export class ClaudeSubprocess extends EventEmitter {
           }
         });
 
-        // Close stdin since we pass prompt as argument
-        this.process.stdin?.end();
+        // Write prompt to stdin to avoid E2BIG errors with large prompts
+        if (this.process.stdin) {
+          this.process.stdin.write(prompt);
+          this.process.stdin.end();
+        }
 
         console.error(`[Subprocess] Process spawned with PID: ${this.process.pid}`);
 
@@ -127,7 +131,7 @@ export class ClaudeSubprocess extends EventEmitter {
   /**
    * Build CLI arguments array
    */
-  private buildArgs(prompt: string, options: SubprocessOptions): string[] {
+  private buildArgs(options: SubprocessOptions): string[] {
     const args = [
       "--print", // Non-interactive mode
       "--output-format",
@@ -137,11 +141,21 @@ export class ClaudeSubprocess extends EventEmitter {
       "--model",
       options.model, // Model alias (opus/sonnet/haiku)
       "--no-session-persistence", // Don't save sessions
-      prompt, // Pass prompt as argument (more reliable than stdin)
     ];
 
+    // Add system prompt if provided
+    if (options.systemPrompt) {
+      args.push("--append-system-prompt", options.systemPrompt);
+    }
+
+    // Add session ID if provided
     if (options.sessionId) {
       args.push("--session-id", options.sessionId);
+    }
+
+    // Support for dangerously skipping permissions (useful for service mode)
+    if (process.env.CLAUDE_DANGEROUSLY_SKIP_PERMISSIONS === "true") {
+      args.push("--dangerously-skip-permissions");
     }
 
     return args;
